@@ -1,0 +1,5 @@
+.idea
+.env
+docker/auth-db/postgres-data
+docker/booking-db/postgres-data
+docker/user-db/postgres-data

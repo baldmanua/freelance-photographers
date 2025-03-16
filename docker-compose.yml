@@ -1,0 +1,75 @@
+services:
+  auth-app:
+    image: webdevops/php-apache-dev:8.4
+    container_name: auth-app
+    volumes:
+      - ./services/auth-service:/app/
+    ports:
+      - '8001:80'
+    networks:
+      - backend
+    working_dir: /app/
+  auth-db:
+    image: postgres:15
+    container_name: auth-db
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - ./docker/auth-db/postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - backend
+
+  user-app:
+    image: webdevops/php-apache-dev:8.4
+    container_name: user-app
+    volumes:
+      - ./services/user-service:/app/
+    ports:
+      - '8002:80'
+    networks:
+      - backend
+    working_dir: /app/
+  user-db:
+    image: postgres:15
+    container_name: user-db
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: user_user
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - ./docker/user-db/postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - backend
+
+  booking-app:
+    image: webdevops/php-apache-dev:8.4
+    container_name: booking-app
+    volumes:
+      - ./services/booking-service:/app/
+    ports:
+      - '8003:80'
+    networks:
+      - backend
+    working_dir: /app/
+  booking-db:
+    image: postgres:15
+    container_name: booking-db
+    environment:
+      POSTGRES_DB: booking_db
+      POSTGRES_USER: booking_user
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - ./docker/booking-db/postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - backend
+
+networks:
+  backend:
