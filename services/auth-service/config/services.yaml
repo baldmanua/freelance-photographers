@@ -5,7 +5,10 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     jwt_secret_key: '%env(JWT_SECRET_KEY)%'
+    jwt_refresh_key: '%env(JWT_REFRESH_KEY)%'
     jwt_alg: '%env(JWT_ALG)%'
+    access_token_ttl: '%env(ACCESS_TOKEN_TTL)%'
+    refresh_token_ttl: '%env(REFRESH_TOKEN_TTL)%'
 
 services:
     # default configuration for services in *this* file
@@ -27,4 +30,7 @@ services:
     App\Service\AuthService:
         arguments:
             $jwtSecretKey: '%jwt_secret_key%'
+            $jwtRefreshKey: '%jwt_refresh_key%'
             $alg: '%jwt_alg%'
+            $accessTokenTTL: '%access_token_ttl%'
+            $refreshTokenTTL: '%refresh_token_ttl%'

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,11 +33,11 @@ class AuthController extends AbstractController
             ], Response::HTTP_UNAUTHORIZED);
         }
 
-        $token = $this->authService->generateToken($user);
+        $tokens = $this->authService->generateTokens($user);
 
         return $this->json([
             'user' => $user->getUserIdentifier(),
-            'token' => $token,
+            'tokens' => $tokens,
         ]);
     }
 
@@ -46,12 +47,12 @@ class AuthController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $email = $data['email'] ?? '';
         $password = $data['password'] ?? '';
-        $role = $data['roles'] ?? ['client'];
+        $roles = $data['roles'] ?? ['client'];
 
         try {
-            $user = $this->userService->registerUser($email, $password, $role);
+            $user = $this->userService->registerUser($email, $password, $roles);
             return new JsonResponse(['message' => 'User registered successfully', 'user' => $user], JsonResponse::HTTP_CREATED);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], JsonResponse::HTTP_BAD_REQUEST);
         }
     }
@@ -65,25 +66,21 @@ class AuthController extends AbstractController
         try {
             $newToken = $this->authService->refreshToken($refreshToken);
             return new JsonResponse(['token' => $newToken]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], JsonResponse::HTTP_UNAUTHORIZED);
         }
     }
 
     #[Route('/auth/verify', methods: ['GET'])]
-    public function verify(Request $request): JsonResponse
+    public function verify(): JsonResponse
     {
-        $token = $request->headers->get('Authorization');
-
-        if (!$token) {
-            return new JsonResponse(['error' => 'Token not provided'], JsonResponse::HTTP_BAD_REQUEST);
-        }
-
-        try {
-            $this->authService->verifyToken($token);
-            return new JsonResponse(['message' => 'Token is valid']);
-        } catch (\Exception $e) {
-            return new JsonResponse(['error' => 'Invalid token'], JsonResponse::HTTP_UNAUTHORIZED);
-        }
+        return new JsonResponse(['message' => 'AccessToken is valid']);
     }
+
+    public function logout(): JsonResponse
+    {
+        /** @ToDO Make logout method after refresh token fix */
+        return new JsonResponse(['message' => "Sorry, the developer messed up here. You can`t logout for now"]);
+    }
+
 }

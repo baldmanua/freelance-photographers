@@ -5,6 +5,7 @@ namespace App\Service;
 use App\Entity\User;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class UserService
@@ -18,11 +19,14 @@ class UserService
     {
     }
 
+    /**
+     * @throws Exception
+     */
     public function registerUser(string $email, string $password, array $roles): User
     {
         $existingUser = $this->userRepository->findOneByEmail($email);
         if ($existingUser) {
-            throw new \Exception('User already exists');
+            throw new Exception('User already exists');
         }
 
         $user = new User();
@@ -33,7 +37,6 @@ class UserService
             $password
         );
         $user->setPassword($hashedPassword);
-
 
         $this->_em->persist($user);
         $this->_em->flush();
