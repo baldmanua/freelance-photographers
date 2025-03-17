@@ -1,0 +1,9 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: Auth Service API
+            description: Auth Service API Docs
+            version: 1.0.0
+    areas:
+        path_patterns:
+            - ^/api(?!/docs$)

@@ -3,12 +3,21 @@ services:
     image: webdevops/php-apache-dev:8.4
     container_name: auth-app
     volumes:
-      - ./services/auth-service:/app/
+      - ./services/auth-service:/app
+    environment:
+      WEB_DOCUMENT_ROOT: /app/public
+      WEB_DOCUMENT_INDEX: index.php
+      XDEBUG_MODE: '${XDEBUG_MODE:-off}'
+      XDEBUG_START_WITH_REQUEST: 1
+      XDEBUG_CLIENT_HOST: host.docker.internal
     ports:
-      - '8001:80'
+      - '${AUTH_APP_EXT_PORT:-8081}:80'
     networks:
       - backend
-    working_dir: /app/
+    working_dir: /app
+    depends_on:
+      - auth-db
+
   auth-db:
     image: postgres:15
     container_name: auth-db
@@ -19,7 +28,7 @@ services:
     volumes:
       - ./docker/auth-db/postgres-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "${AUTH_DB_EXT_PORT:-54321}:5432"
     networks:
       - backend
 
@@ -27,12 +36,21 @@ services:
     image: webdevops/php-apache-dev:8.4
     container_name: user-app
     volumes:
-      - ./services/user-service:/app/
+      - ./services/user-service:/app
+    environment:
+      WEB_DOCUMENT_ROOT: /app/public
+      WEB_DOCUMENT_INDEX: index.php
+      XDEBUG_MODE: '${XDEBUG_MODE:-off}'
+      XDEBUG_START_WITH_REQUEST: 1
+      XDEBUG_CLIENT_HOST: host.docker.internal
     ports:
-      - '8002:80'
+      - '${USER_APP_EXT_PORT:-8082}:80'
     networks:
       - backend
     working_dir: /app/
+    depends_on:
+      - user-db
+
   user-db:
     image: postgres:15
     container_name: user-db
@@ -43,7 +61,7 @@ services:
     volumes:
       - ./docker/user-db/postgres-data:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      - "${USER_DB_EXT_PORT:-54322}:5432"
     networks:
       - backend
 
@@ -51,12 +69,21 @@ services:
     image: webdevops/php-apache-dev:8.4
     container_name: booking-app
     volumes:
-      - ./services/booking-service:/app/
+      - ./services/booking-service:/app
+    environment:
+      WEB_DOCUMENT_ROOT: /app/public
+      WEB_DOCUMENT_INDEX: index.php
+      XDEBUG_MODE: '${XDEBUG_MODE:-off}'
+      XDEBUG_START_WITH_REQUEST: 1
+      XDEBUG_CLIENT_HOST: host.docker.internal
     ports:
-      - '8003:80'
+      - '${BOOKING_APP_EXT_PORT:-8083}:80'
     networks:
       - backend
     working_dir: /app/
+    depends_on:
+      - booking-db
+
   booking-db:
     image: postgres:15
     container_name: booking-db
@@ -67,7 +94,31 @@ services:
     volumes:
       - ./docker/booking-db/postgres-data:/var/lib/postgresql/data
     ports:
-      - "5434:5432"
+      - "${BOOKING_DB_EXT_PORT:-54323}:5432"
+    networks:
+      - backend
+
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+    ports:
+      - "${KAFKA_EXT_PORT:-9092}:9092"
+    networks:
+      - backend
+    depends_on:
+      - zookeeper
+
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "${ZOOKEEPER_EXT_PORT:-2181}:2181"
     networks:
       - backend
 
