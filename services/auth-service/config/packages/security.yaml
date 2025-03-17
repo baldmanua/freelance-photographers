@@ -2,25 +2,31 @@ security:
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
     providers:
-        app_user_provider:
-            entity:
-                class: App\Entity\User
-                property: id
+        email_user_provider:
+            id: App\Security\EmailUserProvider
+        id_user_provider:
+            id: App\Security\IdUserProvider
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
+        login:
+            pattern: ^/auth/login
+            stateless: true
+            provider: email_user_provider
+            json_login:
+                check_path: login
         main:
             access_token:
                 token_handler: App\Security\AccessTokenHandler
             lazy: true
-            provider: app_user_provider
-            json_login:
-                check_path: login
+            stateless: true
+            provider: id_user_provider
     access_control:
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
         - { path: ^/auth/verify, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/auth/logout, roles: IS_AUTHENTICATED_FULLY }
 when@test:
     security:
         password_hashers:

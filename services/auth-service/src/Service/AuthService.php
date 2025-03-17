@@ -2,8 +2,11 @@
 
 namespace App\Service;
 
+use App\Entity\RefreshToken;
 use App\Entity\User;
-use App\Repository\UserRepository;
+use App\Repository\RefreshTokenRepository;
+use DateTimeImmutable;
+use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Firebase\JWT\Key;
 use stdClass;
@@ -12,22 +15,16 @@ use Firebase\JWT\JWT;
 
 class AuthService
 {
-
     public function __construct(
-        private UserRepository $userRepository,
+        private RefreshTokenRepository $refreshTokenRepository,
+        private EntityManagerInterface $entityManager,
         private string $jwtSecretKey,
         private string $jwtRefreshKey,
         private string $alg,
         private int $accessTokenTTL,
         private int $refreshTokenTTL,
-    )
-    {
-    }
+    ) {}
 
-    /**
-     * @param User $user
-     * @return string[] {}
-     */
     public function generateTokens(User $user): array
     {
         return [
@@ -36,17 +33,21 @@ class AuthService
         ];
     }
 
-    /**
-     * @throws AuthenticationException
-     */
-    public function refreshToken(string $refreshToken): string
+    public function refreshToken(string $refreshToken): array
     {
         try {
-            $decoded = $this->decode($refreshToken, $this->jwtRefreshKey);
+            $tokenEntity = $this->refreshTokenRepository->findOneByToken($refreshToken);
 
-            $user = $this->userRepository->find($decoded->sub);
+            if (!$tokenEntity || $tokenEntity->getExpiresAt() < new DateTimeImmutable()) {
+                throw new AuthenticationException('Invalid or expired refresh token');
+            }
 
-            return $this->generateAccessToken($user);
+            $user = $tokenEntity->getUser();
+
+            $this->entityManager->remove($tokenEntity);
+            $this->entityManager->flush();
+
+            return $this->generateTokens($user);
         } catch (Exception $e) {
             throw new AuthenticationException('Invalid refresh token');
         }
@@ -57,13 +58,24 @@ class AuthService
      */
     public function verifyToken(string $token, bool $isRefresh = false): string
     {
-        $key = $isRefresh? $this->jwtRefreshKey: $this->jwtSecretKey;
+        $key = $isRefresh ? $this->jwtRefreshKey : $this->jwtSecretKey;
         try {
             $decodedToken = $this->decode($token, $key);
             return $decodedToken->sub;
         } catch (Exception $e) {
             throw new AuthenticationException('Invalid token');
         }
+    }
+
+    public function removeAllTokens(string $userId): void
+    {
+        $tokens = $this->refreshTokenRepository->findByUserId($userId);
+
+        foreach ($tokens as $token) {
+            $this->entityManager->remove($token);
+        }
+
+        $this->entityManager->flush();
     }
 
     private function generateAccessToken(User $user): string
@@ -79,16 +91,21 @@ class AuthService
 
         return JWT::encode($payload, $this->jwtSecretKey, $this->alg);
     }
+
     private function generateRefreshToken(User $user): string
     {
-        $payload = [
-            'iss' => 'auth-service',
-            'sub' => $user->getId(),
-            'iat' => time(),
-            'exp' => time() + $this->refreshTokenTTL,
-        ];
+        $token = bin2hex(random_bytes(64));
+        $expiresAt = new DateTimeImmutable('+' . $this->refreshTokenTTL . ' seconds');
 
-        return JWT::encode($payload, $this->jwtRefreshKey, $this->alg);
+        $refreshToken = new RefreshToken();
+        $refreshToken->setUser($user);
+        $refreshToken->setToken($token);
+        $refreshToken->setExpiresAt($expiresAt);
+
+        $this->entityManager->persist($refreshToken);
+        $this->entityManager->flush();
+
+        return $token;
     }
 
     private function decode(string $token, string $key): stdClass

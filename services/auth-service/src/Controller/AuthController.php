@@ -8,7 +8,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 use App\Service\AuthService;
 use App\Service\UserService;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -64,8 +64,8 @@ class AuthController extends AbstractController
         $refreshToken = $data['refresh_token'] ?? '';
 
         try {
-            $newToken = $this->authService->refreshToken($refreshToken);
-            return new JsonResponse(['token' => $newToken]);
+            $newTokens = $this->authService->refreshToken($refreshToken);
+            return new JsonResponse(['tokens' => $newTokens]);
         } catch (Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], JsonResponse::HTTP_UNAUTHORIZED);
         }
@@ -77,10 +77,13 @@ class AuthController extends AbstractController
         return new JsonResponse(['message' => 'AccessToken is valid']);
     }
 
+    #[Route('/auth/logout', methods: ['POST'])]
     public function logout(): JsonResponse
     {
-        /** @ToDO Make logout method after refresh token fix */
-        return new JsonResponse(['message' => "Sorry, the developer messed up here. You can`t logout for now"]);
+        /** @var User $user */
+        $user = $this->getUser();
+        $this->authService->removeAllTokens($user->getId());
+        return new JsonResponse(['message' => "Logged out"]);
     }
 
 }
