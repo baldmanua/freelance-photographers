@@ -11,7 +11,7 @@ security:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
         login:
-            pattern: ^/auth/login
+            pattern: ^/api/auth/login
             stateless: true
             provider: email_user_provider
             json_login:
@@ -23,10 +23,9 @@ security:
             stateless: true
             provider: id_user_provider
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
-        - { path: ^/auth/verify, roles: IS_AUTHENTICATED_FULLY }
-        - { path: ^/auth/logout, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/verify, roles: IS_AUTHENTICATED_FULLY }
+        - { path: ^/api/auth/logout, roles: IS_AUTHENTICATED_FULLY }
 when@test:
     security:
         password_hashers:

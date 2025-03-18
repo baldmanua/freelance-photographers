@@ -22,7 +22,7 @@ class UserService
     /**
      * @throws Exception
      */
-    public function registerUser(string $email, string $password, array $roles): User
+    public function registerUser(string $email, string $password): User
     {
         $existingUser = $this->userRepository->findOneByEmail($email);
         if ($existingUser) {
@@ -31,12 +31,7 @@ class UserService
 
         $user = new User();
         $user->setEmail($email);
-        $user->setRoles($roles);
-        $hashedPassword = $this->passwordHasher->hashPassword(
-            $user,
-            $password
-        );
-        $user->setPassword($hashedPassword);
+        $user->setPassword($this->passwordHasher->hashPassword($user, $password));
 
         $this->_em->persist($user);
         $this->_em->flush();

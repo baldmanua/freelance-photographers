@@ -24,7 +24,7 @@ class AuthController extends AbstractController
         $this->userService = $userService;
     }
 
-    #[Route('/auth/login', name: 'login', methods: ['POST'])]
+    #[Route('/api/auth/login', name: 'login', methods: ['POST'])]
     public function login(#[CurrentUser] ?User $user): Response
     {
         if (null === $user) {
@@ -41,23 +41,27 @@ class AuthController extends AbstractController
         ]);
     }
 
-    #[Route('/auth/register', methods: ['POST'])]
+    #[Route('/api/auth/register', methods: ['POST'])]
     public function register(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
         $email = $data['email'] ?? '';
         $password = $data['password'] ?? '';
-        $roles = $data['roles'] ?? ['client'];
 
         try {
-            $user = $this->userService->registerUser($email, $password, $roles);
-            return new JsonResponse(['message' => 'User registered successfully', 'user' => $user], JsonResponse::HTTP_CREATED);
+            $user = $this->userService->registerUser($email, $password);
+            return new JsonResponse([
+                'message' => 'User registered successfully',
+                'user' => [
+                    'email' => $user->getEmail()
+                ]
+            ], JsonResponse::HTTP_CREATED);
         } catch (Exception $e) {
             return new JsonResponse(['error' => $e->getMessage()], JsonResponse::HTTP_BAD_REQUEST);
         }
     }
 
-    #[Route('/auth/refresh', methods: ['POST'])]
+    #[Route('/api/auth/refresh', methods: ['POST'])]
     public function refresh(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -71,13 +75,13 @@ class AuthController extends AbstractController
         }
     }
 
-    #[Route('/auth/verify', methods: ['GET'])]
+    #[Route('/api/auth/verify', methods: ['GET'])]
     public function verify(): JsonResponse
     {
         return new JsonResponse(['message' => 'AccessToken is valid']);
     }
 
-    #[Route('/auth/logout', methods: ['POST'])]
+    #[Route('/api/auth/logout', methods: ['POST'])]
     public function logout(): JsonResponse
     {
         /** @var User $user */
@@ -85,5 +89,4 @@ class AuthController extends AbstractController
         $this->authService->removeAllTokens($user->getId());
         return new JsonResponse(['message' => "Logged out"]);
     }
-
 }
