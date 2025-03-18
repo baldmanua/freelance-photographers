@@ -1,0 +1,118 @@
+openapi: 3.0.0
+info:
+  title: Authentication API
+  version: 1.0.0
+
+paths:
+  /api/auth/login:
+    post:
+      summary: "Authorization"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: "user@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        "200":
+          description: "Login successful"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: string
+                  tokens:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                      refresh_token:
+                        type: string
+        "401":
+          description: "Invalid credentials"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid credentials."
+
+  /api/auth/register:
+    post:
+      summary: "Registration"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: "newuser@example.com"
+                password:
+                  type: string
+                  example: "strongpassword"
+      responses:
+        "201":
+          description: "User created"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User registered successfully"
+                  user:
+                    type: object
+                    properties:
+                      email:
+                        type: string
+                        example: "newuser@example.com"
+        "400":
+          description: "Error"
+
+  /api/auth/refresh:
+    post:
+      summary: "Token refresh"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  example: "your-refresh-token"
+      responses:
+        "200":
+          description: "New access token"
+        "401":
+          description: "Refresh token is not valid"
+
+  /api/auth/verify:
+    get:
+      summary: "Token verification"
+      responses:
+        "200":
+          description: "Token is valid"
+
+  /api/auth/logout:
+    post:
+      summary: "Logout"
+      responses:
+        "200":
+          description: "Logged out"
